@@ -1,0 +1,245 @@
+<!DOCTYPE html><html><head><meta http-equiv=content-type content="text/html; charset=GBK"><title>��Ϣ����ϵͳ</title><link href=plugin/bootstrap-3.3.5-dist/css/bootstrap.min.css type=text/css rel=stylesheet><link href=plugin/bootstrap-3.3.5-dist/css/bootstrap-theme.css type=text/css rel=stylesheet><link href=plugin/bootstrap-data-table-dist/bootstrap-table.min.css type=text/css rel=stylesheet><link href=plugin/bootstrap3-dialog-master/bootstrap-dialog.css type=text/css rel=stylesheet><link href=plugin/artDialog/ui-dialog.css rel=stylesheet><link href=css/articleCss.css type=text/css rel=stylesheet><script src=plugin/jquery/jquery-1.12.3.js type=text/javascript></script><script src=plugin/compatible/jquery-migrate-1.4.1.js type=text/javascript></script><script src=plugin/bootstrap-3.3.5-dist/js/bootstrap.min.js type=text/javascript></script><script src=plugin/bootstrap-data-table-dist/bootstrap-table.js type=text/javascript></script><script src=plugin/bootstrap-data-table-dist/locale/bootstrap-table-zh-CN.js type=text/javascript></script><script src=plugin/bootstrap3-dialog-master/bootstrap-dialog.js type=text/javascript></script><script src=plugin/bootstrap-data-table-dist/extensions/editable/bootstrap-table-editable.js></script><script src=plugin/artDialog/dialog.js></script><script src=plugin/compatible/respond.min.js type=text/javascript></script><script src=plugin/compatible/html5shiv.js type=text/javascript></script><script src=js/Util.js type=text/javascript></script><script src=js/globalVars.js type=text/javascript></script><script src=js/globalUrl.js type=text/javascript></script></head><body><div class=container><div class=container-title-div><h4 class=container-title-h4>Ȩ�޹���</h4></div><div id=toolbar><button id=btnRemove class="btn btn-danger" style=margin-left:5px;><i class="glyphicon glyphicon-remove"></i> ѡ��ɾ��</button><button id=btnAuthoriza class="btn btn-primary" data-toggle=modal data-target=#divAuthDlg>��Ȩ����</button> <button type=button class="btn btn-primary" data-toggle=modal data-target=#divNewUserDlg>�½��û�</button></div><table id=table data-toggle=table1 data-toolbar=#toolbar data-height=600 data-sort-name=price data-sort-order=desc data-pagination=true data-page-list="[15, 20, 50, ALL]" , data-pagesize=15 data-show-refresh=true data-search=true><thead><tr><th data-field=state data-checkbox=true></th><th data-field=userName data-sortable=ture>�û���</th><th data-field=passCode data-sortable=ture>��Ȩ��</th><th data-field=status data-sortable=ture>״̬</th><th data-field=formatter data-sortable=false data-events=operateEvents>����</th></tr></thead></table><div id=divAuthDlg class="modal fade m-baseModal-mid" tabindex=-1 role=dialog aria-labelledby=myModalLabel aria-hidden=true><div class=modal-dialog><div class=modal-content><div class=modal-header><button type=button class=close data-dismiss=modal aria-label=Close><span aria-hidden=true>&times;</span></button><h4 class=modal-title>��Ȩ����</h4></div><div id=AuthDlgBody class=modal-body><table id=tableAuth data-toggle=table2 data-height=200><thead><tr><th data-field=state data-checkbox=true></th><th data-field=moduleName>��Ϣ����</th></tr></thead></table></div><div class=modal-footer><button id=btnSubAuth type=button class="btn btn-default" data-dismiss=modal>�ύ</button></div></div></div></div><div id=divNewUserDlg class="modal fade m-baseModal-mid" tabindex=-1 role=dialog aria-labelledby=ModalLabel aria-hidden=true><div class=modal-dialog><div class=modal-content><div class=modal-header><button type=button class=close data-dismiss=modal aria-label=Close><span aria-hidden=true>&times;</span></button><h4 class=modal-title>�½��û�</h4></div><div class=modal-body><div class=row><div class=col-lg-12><div class=input-group style="margin-top: 5px"><span class=input-group-addon>��վ����</span> <input id=ipWebSiteName type=text class=form-control placeholder=��������վ����> <span class=input-group-addon style=color:red;><i class=glyphicon-asterisk></i></span></div><div class=input-group style="margin-top: 5px"><span class=input-group-addon>��վ��ַ</span> <input id=ipWebSiteAddres type=text class=form-control placeholder=��������ַ> <span class=input-group-addon style=color:red;><i class=glyphicon-asterisk></i></span></div><div class=input-group-btn><button type=button class="btn btn-default dropdown-toggle" style="margin-top: 5px" data-toggle=dropdown aria-haspopup=true aria-expanded=false>״̬ <span class=caret></span></button><ul id=ulStatus class=dropdown-menu><li value=true><a href=#>����</a></li><li value=false><a href=#>������</a></li></ul></div><div class=input-group style="margin-top: 5px"><input id=ipCode type=text class=form-control disabled placeholder=...�¼��û���> <span class=input-group-btn><button id=btnCreateCode class="btn btn-default" type=button>����������Ȩ��</button></span></div></div></div></div><div class=modal-footer><button id=btnCreateUser type=button class="btn btn-default" data-dismiss=modal>�ύ</button></div></div></div></div></div><script>
+        var table = $('#table'),
+                btnCheckAll = $('#btnCheckAll'),
+                btnUncheckAll = $('#btnUncheckAll'),
+                $btnRefresh = $( '#btnRefresh' );//��ȡ����
+        var authData={}; //��������
+        window.operateEvents = {
+//            'click .like': function (e, value, row, index) {
+//                alert('You click like action, row: ' + JSON.stringify(row));
+//            },
+            'click .remove': function (e, value, row, index) {
+                var param=row.webID;
+                var delUrl=baseUrl+"webUser/deleteByID.shtml?webUserID="+param;
+                artDialog("ȷ��ɾ������",confirmCallBack);
+                function confirmCallBack(){
+                    mAjax("POST",delUrl,mdelCallback())
+                    function mdelCallback(){
+                    }
+                    $( "#table" ).bootstrapTable('remove', {
+                        field: 'userName',
+                        values: [row.userName]
+                    });
+                }
+            }
+        };
+        var mModuleID=queryUrlStrByName("moduleID");//��ѯģ����ID
+        initAuthorityData2();
+        viewListen();
+        /*
+         *  ���ڱ����ļ���
+         * */
+        function viewListen(){
+            btnCheckAll.click(function () {
+                table.bootstrapTable('checkAll');
+            });
+            btnUncheckAll.click(function () {
+                table.bootstrapTable('uncheckAll');
+            });
+            $btnRefresh.click(function(){
+                for(var i in data){
+                    data[i].name="hello "+ data[i].name;
+                }
+                table.bootstrapTable('refresh');
+            });
+
+            //����ɾ��
+            $( "#btnRemove" ).click( function(){
+                var userNames = $.map(table.bootstrapTable('getSelections'), function (row) {
+                    return row.userName;
+                });
+                var data=table.bootstrapTable('getSelections');
+                var param="";
+                for(var i in data){
+                    if(i==0){
+                        param=param+"?webUserIDs="+data[i].webID;
+                    }
+                    if(i!=0){
+                        param=param+"&webUserIDs="+data[i].webID;
+                    }
+                };
+//                alert(param);
+                artDialog("ȷ��ɾ�������û�����",confirmCallBack);
+                function confirmCallBack(){
+                    var delUrl=baseUrl+"webUser/deleteByID.shtml"+param
+                    mAjax("POST",delUrl,delCallback())
+                    table.bootstrapTable( "remove" , {
+                        field: "userName",
+                        values: userNames
+                    } );
+                    function delCallback(){
+//                    alert("�ɹ�");
+                    }
+                }
+            } );
+        }
+        //����ĳ�������ļ������޸��û�״̬
+        $( "#table").unbind("click-cell.bs.table");
+        $( "#table" ).on( "click-cell.bs.table" , function (field, value, row, element){
+            if(value=="status"){
+                var  cutStatus;
+                var webUserID=element.webID;
+                if(element.status=="����"){
+                    cutStatus = false;
+                }
+                if(element.status=="������"){
+                    cutStatus = true;
+                }
+                artDialog("ȷ���޸�״̬����",confirmCallBack);
+                function confirmCallBack(){
+                	var mUrl=baseUrl+"webUser/publish.shtml?webUserID="+webUserID+"&isPulblish="+cutStatus;
+                 	 //��������
+	                mAjax("POST",mUrl,mCallBack);
+	                function mCallBack(){
+	                    table.bootstrapTable("refresh");
+	                }
+                }
+            }
+
+        });
+        function operateFormatter(value, row, index) {
+            return [
+//                '<a class="like" href="javascript:void(0)" title="Like">',
+//                '<i class="glyphicon glyphicon-heart"></i>',
+//                '</a>  ',
+                '<a class="remove" href="javascript:void(0)" title="Remove">',
+                '<i class="glyphicon glyphicon-remove"></i>',
+                '</a>'
+            ].join('');
+        }
+        function initAuthorityData2(){
+            var mUrl=authorityUrl.getList;
+            table.bootstrapTable({
+                method: 'GET',
+                cache: false,
+                sidePagination: 'client',//����Ϊ�������˷�ҳ
+                url: mUrl,
+                responseHandler:responseHandler,
+                searchOnEnterKey: true
+            });
+            function responseHandler(data){
+                var showData=new Array();
+                var data=data.data;
+                $.each(data,function(index,jsValue){
+                    showData[index]={};
+                    showData[index].webID = data[index].webID;
+                    showData[index].userName = data[index].webSiteName;
+                    showData[index].passCode = data[index].accreditCode;
+                    showData[index].webSiteAddress = data[index].webSiteAddress;
+                    if(data[index].status==true) {
+                        showData[index].status = "����" 
+                    }else if (data[index].status==false)
+                    {
+                        showData[index].status = "������"
+                    }
+                    showData[index].formatter=operateFormatter();
+                });
+                return showData;
+            }
+        }
+
+
+        //��Ȩ���ܶԻ���
+        $('#divAuthDlg').on('shown.bs.modal', function () {
+            var isClose=$( "#table" ).bootstrapTable('getSelections');
+            if(isClose.length==0){
+                return;
+            }
+            var tableAuth = $( "#tableAuth" );
+            var moduleUrl = baseUrl+"module/getList.shtml";
+            mAjax("GET",moduleUrl,modulCallback);
+            /**
+             * ģ����Ȩ����
+             * */
+            function modulCallback(data){
+                var data=data.data;
+                var moduleData=new Array();
+                $.each(data,function(index,jsData){
+                    moduleData[index] ={};
+                    moduleData[index].moduleName=data[index].moduleName;
+                    moduleData[index].moduleID=data[index].moduleID;
+                });
+                $( "#tableAuth" ).bootstrapTable({
+                    data:moduleData
+                })
+            }
+            //�ύ����
+            $( "#btnSubAuth").click(function(){
+                var isClose=$( "#table" ).bootstrapTable('getSelections')
+                if(isClose.length==0){
+                    return;
+                }
+                // ��ȡwebID
+                var userId = $( "#table" ).bootstrapTable('getSelections')[0].webID;
+                //��Ȩ�ӿ�
+                var selData=$( "#tableAuth" ).bootstrapTable('getSelections');//��ȡѡ��
+                var param=""
+                for(var i=0;i<selData.length;i++){
+
+                    var j=selData[i].moduleID
+                    param=param+"&moduleIDs="+j;
+                }
+                var authUrl=baseUrl+"webUser/setModuleListByWebUserID.shtml?webUserID="+userId+param;
+                mAjax("POST",authUrl,authCallback);
+                function authCallback(data){
+                    if(data.msg=="success"){
+                        table.bootstrapTable("refresh");
+                    }
+                }
+            });
+
+        });
+        $('#divAuthDlg').on( 'hide.bs.modal', function () {//�ر�ĳЩģ̬��ʱ�����¼�
+            $( "#tableAuth").bootstrapTable("uncheckAll");
+        })
+         //�½��û��Ի���
+        //��ȡ״̬,Ĭ��true
+        var status=true;
+        $( "#divNewUserDlg").on( "shown.bs.modal" , function (){
+            var siteName=$( "#ipWebSiteName" ).val();
+            var site=$( "#ipWebSiteAddres" ).val();
+            $("#ulStatus li").click(function(){
+                status=$(this).attr("value");
+            });
+            var code=$( "#ipCode" ).val();
+            $( "#btnCreateCode" ).click(function(){
+                if(siteName==null||site==null){
+                    alert("�������룺��վ������ַ��״̬");
+                }
+                var creatCodeUrl=baseUrl+"webUser/getAccreditCode.shtml"+"?webSiteName="
+                        +siteName+"&webSiteAddress="+site;
+                mAjax("GET",creatCodeUrl,creatCodeCallback);
+                function creatCodeCallback(data){
+                    $( "#ipCode").val(data.data);
+                }
+            });
+            $( "#btnCreateUser" ).click(function(){
+                var siteName=$( "#ipWebSiteName" ).val();
+                var site=$( "#ipWebSiteAddres" ).val();
+                var code=$( "#ipCode" ).val();
+                if(siteName==null||site==null||code==null){
+                    alert("�������룺��վ������ַ��״̬,��������Ȩ��");
+                    return ;
+                }
+                artDialog("ȷ���½��û�",mConfirmCallback);
+//                dialogConfirm("ȷ���½��û���",mConfirmCallback);����bootstrap�ĶԻ�������һ���������ѷ���
+                function mConfirmCallback(){
+                   	var creatUserUrl=baseUrl+"webUser/add.shtml"+"?webSiteName="
+                        +siteName+"&webSiteAddress="+site+"&status="+status+"&accreditCode="+code;
+	                mAjax("GET",creatUserUrl,creatUserCallback);
+	                function creatUserCallback(data){
+	                    if(data.msg=="success"){
+	                        table.bootstrapTable("refresh");
+	                    }
+	                }
+                }
+             
+            });
+        } );
+        $( "#divNewUserDlg").on( "hide.bs.modal" , function (){
+            $( "#ipWebSiteName" ).val("");
+            $( "#ipWebSiteAddres" ).val("");
+            $( "#ipStatus" ).val("");
+            $( "#ipCode" ).val("");
+        })
+    </script></body></html>
